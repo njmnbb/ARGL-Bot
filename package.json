@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/njmnbb/ARGL-Bot/issues"
   },
-  "homepage": "https://github.com/njmnbb/ARGL-Bot#readme"
+  "homepage": "https://github.com/njmnbb/ARGL-Bot#readme",
+  "dependencies": {
+    "discord.js": "^14.6.0"
+  }
 }
