@@ -16,7 +16,7 @@ let isTimerComplete = true;
 client.on('messageCreate', (message) => {
 
     if(message.content.toUpperCase().includes('ARGL') && !message.author.bot && isTimerComplete) {
-        message.reply(`@everyone \n\n We have a genuine "argl" in the chat. Remain calm!`);
+        message.reply(`@everyone \n\n We have a genuine "argl" in the chat. Remain calm!\n\But don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next argl can be notified!`);
         isTimerComplete = false;
         setTimeout(() => isTimerComplete = true, 1200000);
     }
