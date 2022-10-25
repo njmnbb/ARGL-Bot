@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, MessageType } = require('discord.js');
 const { token, mongo_uri } = require('./config.json');
 const mongoose = require('mongoose');
-const testSchema = require('./test-schema');
+const userSchema = require('./user-schema');
 
 // Create a new client instance
 const client = new Client({
@@ -28,7 +28,7 @@ client.on('messageCreate', async (message) => {
             // If a user is trying to argl themselves, send a nastygram and deduct one point from their score
             if (message.author.id === await (await message.fetchReference()).author.id) {
                 // Deduct one point from the abuser's score
-                await testSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: -1 } });
+                await userSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: -1 } });
 
                 // Retrieve all user entries from DB
                 const displayUserList = await retrieveUserList();
@@ -36,7 +36,7 @@ client.on('messageCreate', async (message) => {
                 message.reply(`@everyone\n\nATTEMPTING TO BYPASS THE PROTOCOL WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
             } else if(isTimerComplete) {
                 // Add score to user
-                await testSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
+                await userSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
 
                 // Retrieve all user entries from DB
                 const displayUserList = await retrieveUserList();
@@ -53,7 +53,7 @@ client.on('messageCreate', async (message) => {
 });
 
 async function retrieveUserList() {
-    let userList = await testSchema.find().sort({ score: -1 });
+    let userList = await userSchema.find().sort({ score: -1 });
     let displayUserList = '';
 
     userList.forEach((user, index) => {

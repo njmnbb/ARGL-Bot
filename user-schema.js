@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const schema = new mongoose.Schema({
+const userSchema = new mongoose.Schema({
     discordId: {
         type: String,
         required: true
@@ -15,4 +15,4 @@ const schema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('users', schema);
+module.exports = mongoose.model('users', userSchema);
