@@ -27,8 +27,11 @@ client.on('messageCreate', async (message) => {
             if(message.author.id === await (await message.fetchReference()).author.id) {
                 message.reply(`@everyone\n\nATTEMPTING TO BYPASS THE PROTOCOL WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**`);
 
-                await testSchema.updateOne({discordId: message.author.id}, {$inc: {score: -1}});
+                await testSchema.updateOne({discordId: await (await message.fetchReference()).author.id}, {$inc: {score: -1}});
             } else {
+                // Add score to user
+                await testSchema.updateOne({discordId: await (await message.fetchReference()).author.id}, {$inc: {score: 1}});
+
                 // Retrieve all user entries from DB
                 let userList = await testSchema.find().sort({score: -1});
                 let displayUserList = '';
@@ -36,8 +39,6 @@ client.on('messageCreate', async (message) => {
                 userList.forEach((user, index) => {
                     displayUserList += `${user.displayName}: ${user.score}\n`;
                 });
-                
-                await testSchema.updateOne({discordId: message.author.id}, {$inc: {score: 1}});
 
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${displayUserList}`);
                 isTimerComplete = false;
