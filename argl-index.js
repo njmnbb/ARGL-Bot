@@ -66,7 +66,7 @@ client.on(Events.MessageCreate, async (message) => {
                 await UserSchema.increaseScore(await (await message.fetchReference()).author.id);
 
                 // Retrieve all user entries from DB
-                const scoreboard = await retrieveUserList();
+                const scoreboard = await formatUserList();
 
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
                 isTimerComplete = false;
@@ -90,13 +90,13 @@ async function nameAndShameUser(abusingMessage, abuseReason) {
     await UserSchema.decreaseScore(abusingMessage.author.id);
 
     // Retrieve all user entries from DB to display later
-    const scoreboard = await retrieveUserList(); 
+    const scoreboard = await formatUserList(); 
 
     // Alert the channel and the abuser that they dun goofed up
     abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${scoreboard}`);
 }
 
-async function retrieveUserList() {
+async function formatUserList() {
     let userList = await UserSchema.findAndSortAllUsers();
     let displayUserList = '';
 
@@ -109,4 +109,4 @@ async function retrieveUserList() {
 
 client.login(token);
 
-module.exports = { retrieveUserList };
+exports.formatUserList = formatUserList;
