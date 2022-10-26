@@ -1,5 +1,5 @@
 const { Client, GatewayIntentBits, MessageType } = require('discord.js');
-const { token, mongo_uri } = require('./config.json');
+const { token, mongo_uri, clientId } = require('./config.json');
 const mongoose = require('mongoose');
 const userSchema = require('./user-schema');
 
@@ -33,8 +33,8 @@ client.on('messageCreate', async (message) => {
                 // Retrieve all user entries from DB
                 const displayUserList = await retrieveUserList();
 
-                message.reply(`@everyone\n\nATTEMPTING TO BYPASS THE PROTOCOL WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
-            } else if(isTimerComplete) {
+                message.reply(`@everyone\n\n${message.author}HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY "ARGL"ING THEIR OWN MESSAGE. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
+            } else if (isTimerComplete) {
                 // Add score to user
                 await userSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
 
@@ -49,6 +49,20 @@ client.on('messageCreate', async (message) => {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
         }
 
+    }
+});
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+    // If a user is trying to edit an old message to include an "argl", name and shame them
+    if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase().includes('ARGL')) {
+        
+        // Deduct one point from the abuser's score
+        await userSchema.updateOne({ discordId: newMessage.author.id }, { $inc: { score: -1 } });
+
+        // Retrieve all user entries from DB
+        const displayUserList = await retrieveUserList();
+
+        newMessage.reply(`@everyone\n\n${newMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY EDITING A PREVIOUSLY SENT MESSAGE TO INCLUDE AN "ARGL". THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
     }
 });
 
