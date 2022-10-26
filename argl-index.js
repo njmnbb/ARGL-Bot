@@ -1,7 +1,8 @@
 const { Client, GatewayIntentBits, MessageType } = require('discord.js');
-const { token, mongo_uri, clientId, abuseReason_prevEdit, abuseReason_selfReply } = require('./config.json');
+const { token, mongo_uri, clientId } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
+const ABUSE_REASONS = './Constants';
 
 // Create a new client instance
 const client = new Client({
@@ -27,7 +28,7 @@ client.on('messageCreate', async (message) => {
 
             // If a user is trying to "argl" themselves, name and shame them
             if (message.author.id === await (await message.fetchReference()).author.id) {
-               nameAndShameUser(message, abuseReason_selfReply);
+                nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
             } else if (isTimerComplete) {
                 // Add score to user
                 await UserSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
@@ -42,14 +43,13 @@ client.on('messageCreate', async (message) => {
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
         }
-
     }
 });
 
 client.on('messageUpdate', async (oldMessage, newMessage) => {
     // If a user is trying to edit an old message to include an "argl" that wasn't already there, name and shame them
     if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase().includes('ARGL')) {
-        nameAndShameUser(newMessage, abuseReason_prevEdit);
+        nameAndShameUser(newMessage, ABUSE_REASONS.PREV_EDIT);
     }
 });
 
