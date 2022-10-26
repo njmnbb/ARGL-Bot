@@ -25,7 +25,7 @@ client.on('messageCreate', async (message) => {
     if (message.content.toUpperCase().includes('ARGL') && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
-            // If a user is trying to argl themselves, send a nastygram and deduct one point from their score
+            // If a user is trying to "argl" themselves, name and shame them
             if (message.author.id === await (await message.fetchReference()).author.id) {
                nameAndShameUser(message, abuseReason_selfReply);
             } else if (isTimerComplete) {
@@ -47,11 +47,9 @@ client.on('messageCreate', async (message) => {
 });
 
 client.on('messageUpdate', async (oldMessage, newMessage) => {
-    // If a user is trying to edit an old message to include an "argl", name and shame them
+    // If a user is trying to edit an old message to include an "argl" that wasn't already there, name and shame them
     if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase().includes('ARGL')) {
-
         nameAndShameUser(newMessage, abuseReason_prevEdit);
-
     }
 });
 
