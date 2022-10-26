@@ -55,15 +55,15 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
     }
 });
 
-async function nameAndShameUser(message, abuseReason) {
+async function nameAndShameUser(abusingMessage, abuseReason) {
     // Deduct one point from the abuser's score
-    await userSchema.updateOne({ discordId: message.author.id }, { $inc: { score: -1 } });
+    await userSchema.updateOne({ discordId: abusingMessage.author.id }, { $inc: { score: -1 } });
 
     // Retrieve all user entries from DB to display later
     const displayUserList = await retrieveUserList();
 
     // Alert the channel and the abuser that they dun goofed up
-    message.reply(`@everyone\n\n${message.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
+    abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
 }
 
 async function retrieveUserList() {
