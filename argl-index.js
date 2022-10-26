@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits, MessageType } = require('discord.js');
 const { token, mongo_uri, clientId } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
-const ABUSE_REASONS = './Constants';
+const ABUSE_REASONS = require('./Constants');
 
 // Create a new client instance
 const client = new Client({
