@@ -1,7 +1,7 @@
 const { Client, GatewayIntentBits, MessageType } = require('discord.js');
 const { token, mongo_uri, clientId, abuseReason_prevEdit, abuseReason_selfReply } = require('./config.json');
 const mongoose = require('mongoose');
-const userSchema = require('./mongodb-schemas/User');
+const UserSchema = require('./mongodb-schemas/User');
 
 // Create a new client instance
 const client = new Client({
@@ -30,7 +30,7 @@ client.on('messageCreate', async (message) => {
                nameAndShameUser(message, abuseReason_selfReply);
             } else if (isTimerComplete) {
                 // Add score to user
-                await userSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
+                await UserSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
 
                 // Retrieve all user entries from DB
                 const displayUserList = await retrieveUserList();
@@ -57,7 +57,7 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 
 async function nameAndShameUser(abusingMessage, abuseReason) {
     // Deduct one point from the abuser's score
-    await userSchema.updateOne({ discordId: abusingMessage.author.id }, { $inc: { score: -1 } });
+    await UserSchema.updateOne({ discordId: abusingMessage.author.id }, { $inc: { score: -1 } });
 
     // Retrieve all user entries from DB to display later
     const displayUserList = await retrieveUserList();
@@ -67,7 +67,7 @@ async function nameAndShameUser(abusingMessage, abuseReason) {
 }
 
 async function retrieveUserList() {
-    let userList = await userSchema.find().sort({ score: -1 });
+    let userList = await UserSchema.find().sort({ score: -1 });
     let displayUserList = '';
 
     userList.forEach((user, index) => {
