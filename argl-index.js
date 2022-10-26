@@ -1,4 +1,6 @@
-const { Client, GatewayIntentBits, MessageType } = require('discord.js');
+const fs = require('node:fs');
+const path = require('node:path');
+const { Client, GatewayIntentBits, MessageType, Events, Collection } = require('discord.js');
 const { token, mongo_uri, clientId } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
@@ -13,17 +15,46 @@ const client = new Client({
     ]
 });
 
+client.commands = new Collection();
+
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+for (const file of commandFiles) {
+	const filePath = path.join(commandsPath, file);
+	const command = require(filePath);
+	// Set a new item in the Collection with the key as the command name and the value as the exported module
+	if ('data' in command && 'execute' in command) {
+		client.commands.set(command.data.name, command);
+	} else {
+		console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+	}
+}
+
 let isTimerComplete = true;
 
-client.on('ready', async () => {
+client.on(Events.ClientReady, async () => {
     await mongoose.connect(mongo_uri, {
         keepAlive: true
     }).catch(console.error);
 });
 
+client.on(Events.InteractionCreate, async interaction => {
+    if(!interaction.isChatInputCommand()) return;
+
+    const command = interaction.client.commands.get(interaction.commandName);
+
+    try {
+		await command.execute(interaction);
+	} catch (error) {
+		console.error(error);
+		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+	}
+});
+
 // Detect when a message is sent and check for argl-iness
-client.on('messageCreate', async (message) => {
-    if (message.content.toUpperCase().includes('ARGL') && !message.author.bot) {
+client.on(Events.MessageCreate, async (message) => {
+    if (message.content.toUpperCase() === 'ARGL' && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
             // If a user is trying to "argl" themselves, name and shame them
@@ -31,12 +62,13 @@ client.on('messageCreate', async (message) => {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
             } else if (isTimerComplete) {
                 // Add score to user
-                await UserSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
+                // await UserSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
+                await UserSchema.increaseScore(await (await message.fetchReference()).author.id);
 
                 // Retrieve all user entries from DB
-                const displayUserList = await retrieveUserList();
+                const scoreboard = await retrieveUserList();
 
-                message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${displayUserList}`);
+                message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
                 isTimerComplete = false;
                 setTimeout(() => isTimerComplete = true, 1200000);
             }
@@ -46,7 +78,7 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.on('messageUpdate', async (oldMessage, newMessage) => {
+client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     // If a user is trying to edit an old message to include an "argl" that wasn't already there, name and shame them
     if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase().includes('ARGL')) {
         nameAndShameUser(newMessage, ABUSE_REASONS.PREV_EDIT);
@@ -55,17 +87,17 @@ client.on('messageUpdate', async (oldMessage, newMessage) => {
 
 async function nameAndShameUser(abusingMessage, abuseReason) {
     // Deduct one point from the abuser's score
-    await UserSchema.updateOne({ discordId: abusingMessage.author.id }, { $inc: { score: -1 } });
+    await UserSchema.decreaseScore(abusingMessage.author.id);
 
     // Retrieve all user entries from DB to display later
-    const displayUserList = await retrieveUserList();
+    const scoreboard = await retrieveUserList(); 
 
     // Alert the channel and the abuser that they dun goofed up
-    abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${displayUserList}`);
+    abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${scoreboard}`);
 }
 
 async function retrieveUserList() {
-    let userList = await UserSchema.find().sort({ score: -1 });
+    let userList = await UserSchema.findAndSortAllUsers();
     let displayUserList = '';
 
     userList.forEach((user, index) => {
@@ -76,3 +108,5 @@ async function retrieveUserList() {
 }
 
 client.login(token);
+
+module.exports = { retrieveUserList };

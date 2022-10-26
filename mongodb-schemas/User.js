@@ -15,4 +15,16 @@ const userSchema = new mongoose.Schema({
     }
 });
 
+userSchema.statics.findAndSortAllUsers = function() {
+    return this.find().sort({ score: -1 });
+}
+
+userSchema.statics.increaseScore = function(authorId) {
+    return this.updateOne({ discordId: authorId }, { $inc: { score: 1 } });
+}
+
+userSchema.statics.decreaseScore = function(authorId) {
+    return this.updateOne({ discordId: authorId }, { $inc: { score: -1 } });
+}
+
 module.exports = mongoose.model('users', userSchema);
