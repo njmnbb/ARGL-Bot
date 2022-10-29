@@ -1,10 +1,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, MessageType, Events, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, MessageType, Events, Collection, Message } = require('discord.js');
 const { token, mongo_uri, clientId } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
 const ABUSE_REASONS = require('./Constants');
+const MessageLog = require('./mongodb-schemas/MessageLog');
 
 // Create a new client instance
 const client = new Client({
@@ -62,15 +63,17 @@ client.on(Events.MessageCreate, async (message) => {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
             } else if (isTimerComplete) {
                 // Add score to user
-                // await UserSchema.updateOne({ discordId: await (await message.fetchReference()).author.id }, { $inc: { score: 1 } });
                 await UserSchema.increaseScore(await (await message.fetchReference()).author.id);
 
                 // Retrieve all user entries from DB
                 const scoreboard = await formatUserList();
 
+                // Log message into messageLog DB
+                MessageLog.logArglMessage(message);
+
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
                 isTimerComplete = false;
-                setTimeout(() => isTimerComplete = true, 1200000);
+                setTimeout(() => isTimerComplete = true, /*1200000*/12);
             }
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
@@ -80,7 +83,7 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     // If a user is trying to edit an old message to include an "argl" that wasn't already there, name and shame them
-    if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase().includes('ARGL')) {
+    if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase() === 'ARGL') {
         nameAndShameUser(newMessage, ABUSE_REASONS.PREV_EDIT);
     }
 });
@@ -100,7 +103,7 @@ async function formatUserList() {
     let userList = await UserSchema.findAndSortAllUsers();
     let displayUserList = '';
 
-    userList.forEach((user, index) => {
+    userList.forEach((user) => {
         displayUserList += `${user.displayName}: ${user.score}\n`;
     });
 

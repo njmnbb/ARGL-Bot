@@ -1,6 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
 const index = require('../argl-index');
-const UserSchema = require('../mongodb-schemas/User')
 
 module.exports = {
     data: new SlashCommandBuilder()
