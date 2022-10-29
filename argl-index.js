@@ -73,7 +73,7 @@ client.on(Events.MessageCreate, async (message) => {
 
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
                 isTimerComplete = false;
-                setTimeout(() => isTimerComplete = true, /*1200000*/12);
+                setTimeout(() => isTimerComplete = true, 1200000);
             }
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
