@@ -32,8 +32,6 @@ for (const file of commandFiles) {
 	}
 }
 
-let isTimerComplete = true;
-
 client.on(Events.ClientReady, async () => {
     await mongoose.connect(mongo_uri, {
         keepAlive: true
@@ -58,10 +56,14 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.content.toUpperCase() === 'ARGL' && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
+            let foo = await UserSchema.checkUsersTimeoutStatus(message.author.id);
+
             // If a user is trying to "argl" themselves, name and shame them
             if (message.author.id === await (await message.fetchReference()).author.id) {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
-            } else if (isTimerComplete) {
+            } else if(await (await UserSchema.checkUsersTimeoutStatus(message.author.id)).isUserTimedOut === true) {
+                message.reply(`Whoa there gender neutral cow-person, you already argl'd someone in the last 10 minutes!\n\nWhy don't you sit for a spell and let someone else have the spotlight for one fucking second you attention seeking slut?`);
+            } else {
                 // Add score to user
                 await UserSchema.increaseScore(await (await message.fetchReference()).author.id);
 
@@ -72,8 +74,10 @@ client.on(Events.MessageCreate, async (message) => {
                 MessageLog.logArglMessage(message);
 
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
-                isTimerComplete = false;
-                setTimeout(() => isTimerComplete = true, 1200000);
+
+                // Time out user who argl'd for 10 minutes
+                await UserSchema.timeOutUser(message.author.id);
+                setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), 600000);
             }
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);

@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     score: {
         type: Number,
         require: true
+    },
+    isUserTimedOut: {
+        type: Boolean,
+        require: false
     }
 });
 
@@ -25,6 +29,18 @@ userSchema.statics.increaseScore = function(authorId) {
 
 userSchema.statics.decreaseScore = function(authorId) {
     return this.updateOne({ discordId: authorId }, { $inc: { score: -1 } });
+}
+
+userSchema.statics.timeOutUser = function(replierId) {
+    return this.updateOne({ discordId: replierId }, { isUserTimedOut: true });
+}
+
+userSchema.statics.unTimeOutUser = function(replierId) {
+    return this.updateOne({ discordId: replierId }, {isUserTimedOut: false});
+}
+
+userSchema.statics.checkUsersTimeoutStatus = function(replierId) {
+    return this.findOne({ discordId: replierId });
 }
 
 module.exports = mongoose.model('users', userSchema);
