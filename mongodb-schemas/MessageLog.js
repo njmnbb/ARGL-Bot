@@ -46,7 +46,8 @@ messageLogSchema.statics.logArglMessage = async function (arglMessage) {
         serverId: arglMessage.guildId,
         channelId: arglMessage.channelId,
         messageId: originalMessage.id,
-        messageContent: originalMessage.content,
+        // If message is just an image, save a link to the image instead of the image itself
+        messageContent: originalMessage.content === '' && originalMessage.attachments.size > 0 ? originalMessage.attachments.first().attachment : originalMessage.content,
         messageAuthorId: originalMessage.author.id,
         messageAuthorDisplayName: originalMessage.author.username,
         messageReplierId: arglMessage.author.id,
