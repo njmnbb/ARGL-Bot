@@ -56,8 +56,6 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.content.toUpperCase() === 'ARGL' && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
-            let foo = await UserSchema.checkUsersTimeoutStatus(message.author.id);
-
             // If a user is trying to "argl" themselves, name and shame them
             if (message.author.id === await (await message.fetchReference()).author.id) {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
@@ -73,7 +71,7 @@ client.on(Events.MessageCreate, async (message) => {
                 // Log message into messageLog DB
                 MessageLog.logArglMessage(message);
 
-                message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **20 more minutes** before the next "argl" can be notified!\n\n**CURRENT SCORES**\n${scoreboard}`);
+                message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)\n\n**CURRENT SCORES**\n${scoreboard}`);
 
                 // Time out user who argl'd for 10 minutes
                 await UserSchema.timeOutUser(message.author.id);
