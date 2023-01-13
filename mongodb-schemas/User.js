@@ -36,7 +36,7 @@ userSchema.statics.timeOutUser = function(replierId) {
 }
 
 userSchema.statics.unTimeOutUser = function(replierId) {
-    return this.updateOne({ discordId: replierId }, {isUserTimedOut: false});
+    return this.updateOne({ discordId: replierId }, { isUserTimedOut: false });
 }
 
 userSchema.statics.checkUsersTimeoutStatus = function(replierId) {

@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, MessageType, Events, Collection, Message } = require('discord.js');
-const { token, mongo_uri, clientId } = require('./config.json');
+const { Client, GatewayIntentBits, MessageType, Events, Collection, Message, Partials } = require('discord.js');
+const { token, mongo_uri, clientId, generalChatId, botId, guildId } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
 const ABUSE_REASONS = require('./Constants');
@@ -12,7 +12,11 @@ const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMessages
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMembers
+    ],
+    partials: [
+        Partials.GuildMember
     ]
 });
 
@@ -56,25 +60,35 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.content.toUpperCase() === 'ARGL' && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
+            const originalMessage = await(await message.fetchReference());
+            const isNameChangeArgl = originalMessage.author.id === botId && originalMessage.content.includes("changed their name to");
+            const oldMemberId = originalMessage.content.slice(originalMessage.content.search(/\@(.*)/g) + 1, originalMessage.content.length - 1);
+
             // If a user is trying to "argl" themselves, name and shame them
-            if (message.author.id === await (await message.fetchReference()).author.id) {
+            if (message.author.id === originalMessage.author.id) {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
+            // If a user is trying to "argl" their own nickname change, name and shame them
+            } else if(isNameChangeArgl && message.author.id === oldMemberId) {
+                nameAndShameUser(message, ABUSE_REASONS.OWN_NAME_CHANGE);
             } else if(await (await UserSchema.checkUsersTimeoutStatus(message.author.id)).isUserTimedOut === true) {
                 message.reply(`Whoa there gender neutral cow-person, you already argl'd someone in the last 10 minutes!\n\nWhy don't you sit for a spell and let someone else have the spotlight for one fucking second you attention seeking slut?`);
             } else {
                 // Add score to user
-                await UserSchema.increaseScore(await (await message.fetchReference()).author.id);
-
+                await UserSchema.increaseScore(isNameChangeArgl ? oldMemberId : await(await message.fetchReference()).author.id);
+                
                 // Retrieve all user entries from DB
                 const scoreboard = await formatUserList();
 
+                if(isNameChangeArgl) await modifyContentForNameChange(originalMessage);
+
                 // Log message into messageLog DB
-                MessageLog.logArglMessage(message);
+                MessageLog.logArglMessage(message, originalMessage, isNameChangeArgl);
 
                 message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)\n\n**CURRENT SCORES**\n${scoreboard}`);
 
                 // Time out user who argl'd for 10 minutes
                 await UserSchema.timeOutUser(message.author.id);
+                
                 setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), 600000);
             }
         } else {
@@ -87,6 +101,12 @@ client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
     // If a user is trying to edit an old message to include an "argl" that wasn't already there, name and shame them
     if (!oldMessage.content.toUpperCase().includes('ARGL') && newMessage.content.toUpperCase() === 'ARGL') {
         nameAndShameUser(newMessage, ABUSE_REASONS.PREV_EDIT);
+    }
+});
+
+client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
+    if(oldMember.displayName !== newMember.displayName) {
+        client.channels.cache.get(generalChatId).send(`"${oldMember.user.username}" changed their name to ${newMember.user.toString()}`);
     }
 });
 
@@ -110,6 +130,16 @@ async function formatUserList() {
     });
 
     return displayUserList;
+}
+
+async function modifyContentForNameChange(originalMessage) {
+    const server = client.guilds.cache.get(guildId);
+    const nameChangeAuthorId = originalMessage.content.slice(originalMessage.content.search(/\@(.*)/g) + 1, originalMessage.content.length - 1);
+    const nameChangeAuthor = await server.members.fetch(nameChangeAuthorId);
+
+    originalMessage.author.id = nameChangeAuthorId;
+    originalMessage.content = originalMessage.content.replace(/<@(.*?)>/g, `"${nameChangeAuthor.nickname === null ? nameChangeAuthor.displayName : nameChangeAuthor.nickname}"`);
+    originalMessage.author.username = originalMessage.content.match(/"(.*?)"/)[0].replace(/"/g, "");
 }
 
 client.login(token);

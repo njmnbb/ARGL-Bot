@@ -39,9 +39,7 @@ const messageLogSchema = new mongoose.Schema({
     }
 });
 
-messageLogSchema.statics.logArglMessage = async function (arglMessage) {
-    const originalMessage = await(await arglMessage.fetchReference());
-
+messageLogSchema.statics.logArglMessage = async function (arglMessage, originalMessage) {  
     this.create({
         serverId: arglMessage.guildId,
         channelId: arglMessage.channelId,
