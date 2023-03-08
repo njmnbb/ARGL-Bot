@@ -24,7 +24,8 @@ userSchema.statics.findAndSortAllUsers = function() {
 }
 
 userSchema.statics.increaseScore = function(authorId) {
-    return this.updateOne({ discordId: authorId }, { $inc: { score: 1 } });
+    // return this.updateOne({ discordId: authorId }, { $inc: { score: 1 } });
+    return this.collection.findOneAndUpdate({ discordId: authorId }, {$inc : {score: 1 } }, { returnDocument: 'after' } );
 }
 
 userSchema.statics.decreaseScore = function(authorId) {
