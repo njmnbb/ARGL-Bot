@@ -1,3 +1,3 @@
 # ARGL-Bot
 
-ARGL: "A Real Genuine Laugh"
+ARGL: "Actually Real Genuine Laugh"
