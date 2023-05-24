@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     score: {
-        type: Number,
+        type: String,
         require: true
     },
     isUserTimedOut: {
