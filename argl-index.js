@@ -1,11 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, MessageType, Events, Collection, Message, Partials } = require('discord.js');
-const { token, mongo_uri, clientId, generalChatId, botId, guildId } = require('./config.json');
+const { Client, GatewayIntentBits, MessageType, Events, Collection, Message, Partials, User } = require('discord.js');
+const { token, mongo_uri, clientId, generalChatId, botId, guildId, arglTimeout } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
 const ABUSE_REASONS = require('./Constants');
 const MessageLog = require('./mongodb-schemas/MessageLog');
+const Milestones = require('./Milestones');
 
 // Create a new client instance
 const client = new Client({
@@ -26,14 +27,14 @@ const commandsPath = path.join(__dirname, 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-	const filePath = path.join(commandsPath, file);
-	const command = require(filePath);
-	// Set a new item in the Collection with the key as the command name and the value as the exported module
-	if ('data' in command && 'execute' in command) {
-		client.commands.set(command.data.name, command);
-	} else {
-		console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
-	}
+    const filePath = path.join(commandsPath, file);
+    const command = require(filePath);
+    // Set a new item in the Collection with the key as the command name and the value as the exported module
+    if ('data' in command && 'execute' in command) {
+        client.commands.set(command.data.name, command);
+    } else {
+        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+    }
 }
 
 client.on(Events.ClientReady, async () => {
@@ -43,16 +44,16 @@ client.on(Events.ClientReady, async () => {
 });
 
 client.on(Events.InteractionCreate, async interaction => {
-    if(!interaction.isChatInputCommand()) return;
+    if (!interaction.isChatInputCommand()) return;
 
     const command = interaction.client.commands.get(interaction.commandName);
 
     try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error(error);
-		await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-	}
+        await command.execute(interaction);
+    } catch (error) {
+        console.error(error);
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+    }
 });
 
 // Detect when a message is sent and check for argl-iness
@@ -60,36 +61,38 @@ client.on(Events.MessageCreate, async (message) => {
     if (message.content.toUpperCase() === 'ARGL' && !message.author.bot) {
         if (message.type === MessageType.Reply) {
 
-            const originalMessage = await(await message.fetchReference());
+            const originalMessage = await (await message.fetchReference());
             const isNameChangeArgl = originalMessage.author.id === botId && originalMessage.content.includes("changed their name to");
             const oldMemberId = originalMessage.content.slice(originalMessage.content.search(/\@(.*)/g) + 1, originalMessage.content.length - 1);
 
             // If a user is trying to "argl" themselves, name and shame them
             if (message.author.id === originalMessage.author.id) {
                 nameAndShameUser(message, ABUSE_REASONS.SELF_REPLY);
-            // If a user is trying to "argl" their own nickname change, name and shame them
-            } else if(isNameChangeArgl && message.author.id === oldMemberId) {
+                // If a user is trying to "argl" their own nickname change, name and shame them
+            } else if (isNameChangeArgl && message.author.id === oldMemberId) {
                 nameAndShameUser(message, ABUSE_REASONS.OWN_NAME_CHANGE);
-            } else if(await (await UserSchema.checkUsersTimeoutStatus(message.author.id)).isUserTimedOut === true) {
+                // If a user is still timed out from their last "argl", send them a message saying they need to wait
+            } else if (await (await UserSchema.checkUsersTimeoutStatus(message.author.id)).isUserTimedOut === true) {
                 message.reply(`Whoa there gender neutral cow-person, you already argl'd someone in the last 10 minutes!\n\nWhy don't you sit for a spell and let someone else have the spotlight for one fucking second you attention seeking slut?`);
             } else {
                 // Add score to user
-                await UserSchema.increaseScore(isNameChangeArgl ? oldMemberId : await(await message.fetchReference()).author.id);
-                
+                const messageAuthor = await (await message.fetchReference()).author;
+                let dbUser = await UserSchema.increaseScore(isNameChangeArgl ? oldMemberId : messageAuthor.id);
+
                 // Retrieve all user entries from DB
                 const scoreboard = await formatUserList();
 
-                if(isNameChangeArgl) await modifyContentForNameChange(originalMessage);
+                if (isNameChangeArgl) await modifyContentForNameChange(originalMessage);
 
                 // Log message into messageLog DB
                 MessageLog.logArglMessage(message, originalMessage, isNameChangeArgl);
 
-                message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)\n\n**CURRENT SCORES**\n${scoreboard}`);
+                replyToArglMessage(message, scoreboard, dbUser, messageAuthor);
 
                 // Time out user who argl'd for 10 minutes
                 await UserSchema.timeOutUser(message.author.id);
-                
-                setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), 600000);
+
+                setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), arglTimeout);
             }
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
@@ -105,7 +108,7 @@ client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
 });
 
 client.on(Events.GuildMemberUpdate, async (oldMember, newMember) => {
-    if(oldMember.displayName !== newMember.displayName) {
+    if (oldMember.displayName !== newMember.displayName) {
         client.channels.cache.get(generalChatId).send(`"${oldMember.user.username}" changed their name to ${newMember.user.toString()}`);
     }
 });
@@ -115,15 +118,15 @@ async function nameAndShameUser(abusingMessage, abuseReason) {
     await UserSchema.decreaseScore(abusingMessage.author.id);
 
     // Retrieve all user entries from DB to display later
-    const scoreboard = await formatUserList(); 
+    const scoreboard = await formatUserList();
 
     // Alert the channel and the abuser that they dun goofed up
-    abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**\n\n**CURRENT SCORES**\n${scoreboard}`);
+    abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**${scoreboard}`);
 }
 
 async function formatUserList() {
     let userList = await UserSchema.findAndSortAllUsers();
-    let displayUserList = '';
+    let displayUserList = '\n\n**CURRENT SCORES**\n';
 
     userList.forEach((user) => {
         displayUserList += `${user.displayName}: ${user.score}\n`;
@@ -140,6 +143,23 @@ async function modifyContentForNameChange(originalMessage) {
     originalMessage.author.id = nameChangeAuthorId;
     originalMessage.content = originalMessage.content.replace(/<@(.*?)>/g, `"${nameChangeAuthor.nickname === null ? nameChangeAuthor.displayName : nameChangeAuthor.nickname}"`);
     originalMessage.author.username = originalMessage.content.match(/"(.*?)"/)[0].replace(/"/g, "");
+}
+
+function isMessageMilestone(dbUser) {
+    for (const milestone of Milestones) {
+        if (milestone.score == dbUser.value.score) 
+            return milestone;
+    }
+    return false;
+}
+
+function replyToArglMessage(message, scoreboard, dbUser, messageAuthor) {
+    const milestone = isMessageMilestone(dbUser);
+    if (milestone) {
+        message.reply(`@everyone\n\n${messageAuthor.toString()}, ${milestone.message}${scoreboard}`);
+    } else {
+        message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)${scoreboard}`);
+    }
 }
 
 client.login(token);
