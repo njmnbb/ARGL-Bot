@@ -6,7 +6,7 @@ module.exports = {
         .setName('scoreboard')
         .setDescription('Displays the "ARGL" scoreboard'),
     async execute(interaction) {
-        interaction.reply(`**CURRENT SCORES**\n${await index.formatUserList()}`);
+        interaction.reply(`${await index.formatUserList()}`);
 
     }
 };

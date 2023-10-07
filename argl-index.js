@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, GatewayIntentBits, MessageType, Events, Collection, Message, Partials, User } = require('discord.js');
+const { Client, EmbedBuilder, GatewayIntentBits, Message, MessageType, Events, Collection, Partials, User } = require('discord.js');
 const { token, mongo_uri, clientId, generalChatId, botId, guildId, arglTimeout } = require('./config.json');
 const mongoose = require('mongoose');
 const UserSchema = require('./mongodb-schemas/User');
@@ -156,7 +156,9 @@ function isMessageMilestone(dbUser) {
 function replyToArglMessage(message, scoreboard, dbUser, messageAuthor) {
     const milestone = isMessageMilestone(dbUser);
     if (milestone) {
-        message.reply(`@everyone\n\n${messageAuthor.toString()}, ${milestone.message}${scoreboard}`);
+        const embed = new EmbedBuilder()
+            .setImage(milestone.gif);
+        message.reply({content: `@everyone\n\n${messageAuthor.toString()}, ${milestone.message}${scoreboard}`, embeds: [embed]});
     } else {
         message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)${scoreboard}`);
     }
