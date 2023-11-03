@@ -131,6 +131,7 @@ async function formatUserList() {
     userList.forEach((user) => {
         displayUserList += `${user.displayName}: ${user.score}\n`;
     });
+    displayUserList += `Tommy's Mom: 1`
 
     return displayUserList;
 }
