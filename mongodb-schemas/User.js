@@ -34,6 +34,7 @@ userSchema.statics.findAndSortAllUsers = function (season) {
         $project: {
             displayName: 1,
             score: 1,
+            isBanned: 1,
             seasonScores: {
                 $map: {
                     input: {

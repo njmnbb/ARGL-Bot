@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, EmbedBuilder, GatewayIntentBits, Message, MessageType, Events, Collection, Partials, User } = require('discord.js');
-const { token, mongo_uri, clientId, generalChatId, botId, guildId, arglTimeout, currentSeason } = require('./config.json');
+const { token, mongo_uri, generalChatId, botId, guildId, arglTimeout, currentSeason } = require('./config.json');
 const UserSchema = require('./mongodb-schemas/User');
 const ABUSE_REASONS = require('./Constants');
 const MessageLog = require('./mongodb-schemas/MessageLog');
