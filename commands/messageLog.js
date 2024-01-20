@@ -7,10 +7,10 @@ module.exports = {
         .setName('message_log')
         .setDescription('Displays a log of all previous "ARGL"s'),
     async execute(interaction) {
-        const foo = await MessageLog.retrieveLog();
+        const messages = await MessageLog.retrieveLog();
         let displayMessageLogs = '';
 
-        foo.forEach(message => {
+        messages.forEach(message => {
             const formattedMessageDate = `${message.messageDate.getMonth() + 1}/${message.messageDate.getDate()}/${message.messageDate.getFullYear()}`;
             displayMessageLogs += `**${message.messageReplierDisplayName}** gave **${message.messageAuthorDisplayName}** an ARGL on ${formattedMessageDate} for the following message:\n\n\`${message.messageContent}\`\n\nSee the whole context here: https://discord.com/channels/${message.serverId}/${message.channelId}/${message.messageId}\n\n--------------------------------------------------------------------------------------------------\n\n`;
         });

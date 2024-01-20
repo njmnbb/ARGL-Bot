@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+const { Schema, model } = require("mongoose");
 
-const messageLogSchema = new mongoose.Schema({
+const messageLogSchema = new Schema({
     serverId: {
         type: String,
         required: true
@@ -58,4 +58,4 @@ messageLogSchema.statics.retrieveLog = function() {
     return this.find().sort({ messageDate: -1 });
 }
 
-module.exports = mongoose.model('messageLog', messageLogSchema);
+module.exports = model('messageLog', messageLogSchema);
