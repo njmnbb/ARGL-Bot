@@ -5,7 +5,9 @@ async function createScoreboard(season) {
     let displayUserList = `\n\n**SEASON ${season} SCORES**\n`;
 
     userList.forEach((user) => {
-        displayUserList += `${user.displayName}: ${user.seasonScores[0].score} (${user.score} total)\n`;
+        if(!user.isBanned) {
+            displayUserList += `${user.displayName}: ${user.seasonScores[0].score} (${user.score} total)\n`;
+        }
     });
 
     return displayUserList;
