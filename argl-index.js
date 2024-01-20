@@ -51,9 +51,31 @@ client.on(Events.ClientReady, async () => {
         tasks.splice(0, 1);
     }
 
-    const task = cron.schedule('0 0 12 23 11 *', () => {
-            client.channels.cache.get(generalChatId).send(`@everyone \n\nATTENTION ALL ARGLERS: The ${getNumberWithOrdinal(currentSeason)} Annual Argies is just around the corner! I hope you\'ve all been having a knee slapping good time with all the laughs we\'ve shared over the past year.\n\nThe voting process for our awards will begin shortly. Any argls that have been awarded past November 31 will NOT be in the running for this year\'s Argies; November 31 is the final day to eke out the last laughs before voting begins. \n\nOnce the submission period has completed, you will be recieving a personalized link that asks you to pick the argls you want to be in the running for the Argies! Once all argls have been collected, a final survey will be sent out for you to vote for each of the Argies categories! Please don\'t be a fuckface and vote for your own argls...we have systems in place to detect any foul play :)\n\nGet your final desperation argls out there, and good luck!`);
+    cron.schedule('0 0 12 23 11 *', async () => {
+        client.channels.cache.get(generalChatId).send(`@everyone \n\nATTENTION ALL ARGLERS: The ${getNumberWithOrdinal(currentSeason)} Annual Argies is just around the corner! I hope you\'ve all been having a knee slapping good time with all the laughs we\'ve shared over the past year.\n\nThe voting process for our awards will begin shortly. Any argls that have been awarded past November 30 will NOT be in the running for this year\'s Argies; November 30 is the final day to eke out the last laughs before voting begins. \n\nOnce the submission period has completed, you will be recieving a personalized link that asks you to pick the argls you want to be in the running for the Argies! Once all argls have been collected, a final survey will be sent out for you to vote for each of the Argies categories! Please don\'t be a fuckface and vote for your own argls...we have systems in place to detect any foul play :)\n\nGet your final desperation argls out there, and good luck!`);
+        await UserSchema.addSeason(currentSeason);
     }, { scheduled: true, timezone: 'America/Chicago' });
+
+    cron.schedule('0 0 0 1 12 *', () => {
+        console.log('asdasdasdsa');
+        fs.readFile('./config.json', (error, data) => {
+            if(error) {
+                console.log(error);
+                return;
+            }
+            const parsedData = JSON.parse(data);
+
+            let season = currentSeason;
+            parsedData.currentSeason = ++season;
+
+            fs.writeFile('./config.json', JSON.stringify(parsedData, null), (error) => {
+                if(error) {
+                    console.log(error);
+                    return;
+                }
+            });
+        });
+    });
 });
 
 client.on(Events.InteractionCreate, async interaction => {

@@ -78,4 +78,8 @@ userSchema.statics.checkUsersTimeoutStatus = function (replierId) {
     return this.findOne({ discordId: replierId });
 }
 
+userSchema.statics.addSeason = function(season) {
+    return this.updateMany({ $push: { seasonScores: { season: season++, score: 0 } } });
+}
+
 module.exports = model('users', userSchema);
