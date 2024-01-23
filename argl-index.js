@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, EmbedBuilder, GatewayIntentBits, Message, MessageType, Events, Collection, Partials, User } = require('discord.js');
-const { token, mongo_uri, generalChatId, botId, guildId, arglTimeout, currentSeason } = require('./config.json');
+const { token, mongo_uri, generalChatId, botId, guildId, arglTimeout, currentSeason, timeoutFeatureflag } = require('./config.json');
 const UserSchema = require('./mongodb-schemas/User');
 const ABUSE_REASONS = require('./Constants');
 const MessageLog = require('./mongodb-schemas/MessageLog');
@@ -51,15 +51,16 @@ client.on(Events.ClientReady, async () => {
         tasks.splice(0, 1);
     }
 
+    // Schedules the yearly Argies Event announcement
     cron.schedule('0 0 12 23 11 *', async () => {
         client.channels.cache.get(generalChatId).send(`@everyone \n\nATTENTION ALL ARGLERS: The ${getNumberWithOrdinal(currentSeason)} Annual Argies is just around the corner! I hope you\'ve all been having a knee slapping good time with all the laughs we\'ve shared over the past year.\n\nThe voting process for our awards will begin shortly. Any argls that have been awarded past November 30 will NOT be in the running for this year\'s Argies; November 30 is the final day to eke out the last laughs before voting begins. \n\nOnce the submission period has completed, you will be recieving a personalized link that asks you to pick the argls you want to be in the running for the Argies! Once all argls have been collected, a final survey will be sent out for you to vote for each of the Argies categories! Please don\'t be a fuckface and vote for your own argls...we have systems in place to detect any foul play :)\n\nGet your final desperation argls out there, and good luck!`);
         await UserSchema.addSeason(currentSeason);
     }, { scheduled: true, timezone: 'America/Chicago' });
 
+    // Schedules the season update in the config file
     cron.schedule('0 0 0 1 12 *', () => {
-        console.log('asdasdasdsa');
         fs.readFile('./config.json', (error, data) => {
-            if(error) {
+            if (error) {
                 console.log(error);
                 return;
             }
@@ -69,13 +70,14 @@ client.on(Events.ClientReady, async () => {
             parsedData.currentSeason = ++season;
 
             fs.writeFile('./config.json', JSON.stringify(parsedData, null), (error) => {
-                if(error) {
+                if (error) {
                     console.log(error);
+                    client.channels.cache.get(botChannelId).send(`<@255577753913524224>\n\nAyy boss, we gots an big ol' honkin errah. Da config file didn't updates da season numbah. Youse gots'ta do dat yourselvesses, see? Here's da problem:\n\n${error}`);
                     return;
                 }
             });
         });
-    });
+    }, { scheduled: true, timezone: 'America/Chicago' });
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -125,9 +127,11 @@ client.on(Events.MessageCreate, async (message) => {
                 replyToArglMessage(message, scoreboard, dbUser, messageAuthor);
 
                 // Time out user who argl'd for 10 minutes
-                await UserSchema.timeOutUser(message.author.id);
+                if(timeoutFeatureflag) {
+                    await UserSchema.timeOutUser(message.author.id);
 
-                setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), arglTimeout);
+                    setTimeout(async () => await UserSchema.unTimeOutUser(message.author.id), arglTimeout);
+                }
             }
         } else {
             client.channels.cache.get(message.channelId).send(`I know you're in stitches right now, but don't forget: you need to **reply** to the person you're laughing at for this to count!`);
