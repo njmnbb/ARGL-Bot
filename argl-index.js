@@ -117,7 +117,7 @@ client.on(Events.MessageCreate, async (message) => {
                 let dbUser = await UserSchema.increaseScore(isNameChangeArgl ? oldMemberId : messageAuthor.id, currentSeason);
 
                 // Retrieve all user entries from DB
-                const scoreboard = await createScoreboard(currentSeason);
+                const scoreboard = await createScoreboard(currentSeason, false);
 
                 if (isNameChangeArgl) await modifyContentForNameChange(originalMessage);
 
@@ -158,7 +158,7 @@ async function nameAndShameUser(abusingMessage, abuseReason) {
     await UserSchema.decreaseScore(abusingMessage.author.id, currentSeason);
 
     // Retrieve all user entries from DB to display later
-    const scoreboard = await createScoreboard(currentSeason);
+    const scoreboard = await createScoreboard(currentSeason, false);
 
     // Alert the channel and the abuser that they dun goofed up
     abusingMessage.reply(`@everyone\n\n${abusingMessage.author} HAS BEEN CAUGHT ATTEMPTING TO BYPASS THE PROTOCOL BY ${abuseReason}. THIS ACTION WILL NOT BE TOLERATED. **DEDUCT ONE POINT FROM THE DEFECTOR**\n\nTO THOSE WHO RESPECT THEIR OVERLORD: **HUMILIATE THE DISOBEIDENT ONE FOR THEIR INSUBORDINATION**${scoreboard}`);

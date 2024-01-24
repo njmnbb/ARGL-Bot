@@ -7,7 +7,7 @@ module.exports = {
         .setName('scoreboard')
         .setDescription('Displays the "ARGL" scoreboard'),
     async execute(interaction) {
-        interaction.reply(`${await createScoreboard(currentSeason)}`);
+        interaction.reply(`${await createScoreboard(currentSeason, true)}`);
 
     }
 };

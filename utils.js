@@ -1,12 +1,12 @@
 const UserSchema = require('./mongodb-schemas/User');
 
-async function createScoreboard(season) {
+async function createScoreboard(season, showTotalScores) {
     let userList = await UserSchema.findAndSortAllUsers(season);
-    let displayUserList = `\n\n**SEASON ${season} SCORES**\n`;
+    let displayUserList = `\n## SEASON ${season} SCORES\n`;
 
     userList.forEach((user) => {
         if(!user.isBanned) {
-            displayUserList += `${user.displayName}: ${user.seasonScores[0].score} (${user.score} total)\n`;
+            displayUserList += `**${user.displayName}**: ${user.seasonScores[0].score} ${showTotalScores ? '(' + user.score + ' total)' : ''}\n`;
         }
     });
 
