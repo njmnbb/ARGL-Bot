@@ -189,7 +189,7 @@ function replyToArglMessage(message, scoreboard, dbUser, messageAuthor) {
             .setImage(milestone.gif);
         message.reply({ content: `@everyone\n\n${messageAuthor.toString()}, ${milestone.message}${scoreboard}`, embeds: [embed] });
     } else {
-        message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\nBut don't go laughing your pants off just yet because you need to wait **10 more minutes** before you can "argl" again! Everyone else has free reign to "argl" if they so choose :)${scoreboard}`);
+        message.reply(`@everyone\n\nWe have a genuine "argl" in the chat. Remain calm!\n\n${scoreboard}`);
     }
 }
 
