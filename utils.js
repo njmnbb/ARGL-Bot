@@ -3,7 +3,7 @@ const UserSchema = require('./mongodb-schemas/User');
 async function createScoreboard(season, showTotalScores) {
     let userList = await UserSchema.findAndSortAllUsers(season);
     let displayUserList = `\n## SEASON ${season} SCORES\n`;
-
+console.log('showtotalscores: ' + showTotalScores);
     userList.forEach((user, i) => {
         if (!user.isBanned) {
             displayUserList += `**${isUserInFirstOrSecondPlace(i) ? '🤫' : user.displayName}**: ${isUserInFirstOrSecondPlace(i) ? '🤫' : user.seasonScores[0].score} ${showTotalScores ? '(' + user.score + ' total)' : ''}\n`;

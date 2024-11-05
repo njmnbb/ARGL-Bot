@@ -41,7 +41,7 @@ for (const file of commandFiles) {
 
 // Make an announcement to main server upon bot restart
 client.on(Events.ClientReady, async () => {
-    client.channels.cache.get(generalChatId).send('@everyone\n\nWe hope that you all have had a year full of laughs, memories, and most importantly argls 🙂. \n\nAs we near the end of season 2, we here at Argies HQ want to add a little competitive spice into the mix. From now until the conclusion of The Second Annual Argies, **the top two spots on the leaderboard will be anonymous.** This should add a fun, chaotic mechanic to the last few weeks of competition that everyone will 100% definitely like.\n\nInformation about the voting process, end of season date, and event details will follow shortly. Good luck, and keep argling! \n\nhttps://media1.tenor.com/m/AYqHqWH77yQAAAAC/good-luck-congrats.gif');
+    // client.channels.cache.get(generalChatId).send('@everyone\n\nWe hope that you all have had a year full of laughs, memories, and most importantly argls 🙂. \n\nAs we near the end of season 2, we here at Argies HQ want to add a little competitive spice into the mix. From now until the conclusion of The Second Annual Argies, **the top two spots on the leaderboard will be anonymous.** This should add a fun, chaotic mechanic to the last few weeks of competition that everyone will 100% definitely like.\n\nInformation about the voting process, end of season date, and event details will follow shortly. Good luck, and keep argling! \n\nhttps://media1.tenor.com/m/AYqHqWH77yQAAAAC/good-luck-congrats.gif');
     await mongoose.connect(mongo_uri, {
         keepAlive: true
     }).catch(console.error);
