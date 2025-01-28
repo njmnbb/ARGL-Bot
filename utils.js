@@ -6,7 +6,7 @@ async function createScoreboard(season, showTotalScores) {
 console.log('showtotalscores: ' + showTotalScores);
     userList.forEach((user, i) => {
         if (!user.isBanned) {
-            displayUserList += `**${isUserInFirstOrSecondPlace(i) ? '🤫' : user.displayName}**: ${isUserInFirstOrSecondPlace(i) ? '🤫' : user.seasonScores[0].score} ${showTotalScores ? '(' + user.score + ' total)' : ''}\n`;
+            displayUserList += `**${user.displayName}**: ${user.seasonScores[0].score} ${showTotalScores ? '(' + user.score + ' total)' : ''}\n`;
         }
     });
     return displayUserList;
