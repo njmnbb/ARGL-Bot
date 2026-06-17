@@ -6,6 +6,7 @@ if (typeof fetch === 'undefined') {
     globalThis.Headers = nodeFetch.Headers;
     globalThis.Request = nodeFetch.Request;
     globalThis.Response = nodeFetch.Response;
+    globalThis.FormData = nodeFetch.FormData;
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
