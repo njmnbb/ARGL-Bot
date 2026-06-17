@@ -1,6 +1,9 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    fetch: typeof fetch !== 'undefined' ? fetch : require('node-fetch')
+});
 
 const HISTORY_LIMIT = 100;
 const DISCORD_MESSAGE_LIMIT = 2000;
