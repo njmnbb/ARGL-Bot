@@ -21,6 +21,7 @@
     "@anthropic-ai/sdk": "^0.104.2",
     "discord.js": "^14.6.0",
     "dotenv": "^17.4.2",
+    "formdata-node": "^6.0.3",
     "mongoose": "^6.7.0",
     "node-cron": "^3.0.3",
     "node-fetch": "^2.7.0",
