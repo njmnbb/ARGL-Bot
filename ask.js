@@ -1,6 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
-if (true) {
+if (typeof fetch === 'undefined') {
     const nodeFetch = require('node-fetch');
     globalThis.fetch = nodeFetch;
     globalThis.Headers = nodeFetch.Headers;
