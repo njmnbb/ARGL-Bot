@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { Client, EmbedBuilder, GatewayIntentBits, Message, MessageType, Events, Collection, Partials, User } = require('discord.js');
 const { token, mongo_uri, generalChatId, botId, guildId, arglTimeout, currentSeason, timeoutFeatureflag } = require('./config.json');
 const UserSchema = require('./mongodb-schemas/User');
