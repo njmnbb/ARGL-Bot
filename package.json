@@ -2,9 +2,11 @@
   "name": "argl-bot",
   "version": "1.0.0",
   "description": "ARGL: \"A Real Genuine Laugh\"",
-  "main": "argl-index.js",
+  "main": "dist/argl-index.js",
   "scripts": {
-    "start": "node deploy-commands.js && pm2 start argl-index.js",
+    "build": "tsc",
+    "start": "npm run build && node dist/deploy-commands.js && pm2 start dist/argl-index.js",
+    "dev": "nodemon",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,5 +29,11 @@
     "node-fetch": "^2.7.0",
     "nodemon": "^2.0.20",
     "pm2": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@types/node-cron": "^3.0.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   }
 }

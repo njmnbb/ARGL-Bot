@@ -1,7 +1,34 @@
-const { Schema, model } = require("mongoose");
-const seasonScoreSchema = require("./SeasonScore");
+import { Schema, model, Model, Document, Types } from 'mongoose';
+import seasonScoreSchema, { SeasonScore } from './SeasonScore';
 
-const userSchema = new Schema({
+export interface AggregatedUser {
+    displayName: string;
+    score: number;
+    isBanned?: boolean;
+    seasonScores: { score: number }[];
+}
+
+export interface UserDocument extends Document {
+    discordId: string;
+    displayName: string;
+    score: number;
+    isUserTimedOut?: boolean;
+    serverId: string;
+    isBanned?: boolean;
+    seasonScores: Types.DocumentArray<SeasonScore>;
+}
+
+export interface UserModel extends Model<UserDocument> {
+    findAndSortAllUsers(season: number): Promise<AggregatedUser[]>;
+    increaseScore(authorId: string, season: number): Promise<UserDocument | null>;
+    decreaseScore(authorId: string, season: number): Promise<unknown>;
+    timeOutUser(replierId: string): Promise<unknown>;
+    unTimeOutUser(replierId: string): Promise<unknown>;
+    checkUsersTimeoutStatus(replierId: string): Promise<UserDocument | null>;
+    addSeason(season: number): Promise<unknown>;
+}
+
+const userSchema = new Schema<UserDocument, UserModel>({
     discordId: {
         type: String,
         required: true
@@ -29,7 +56,7 @@ const userSchema = new Schema({
     seasonScores: [seasonScoreSchema]
 });
 
-userSchema.statics.findAndSortAllUsers = function (season) {
+userSchema.statics.findAndSortAllUsers = function (season: number) {
     return this.aggregate([{
         $project: {
             displayName: 1,
@@ -57,30 +84,30 @@ userSchema.statics.findAndSortAllUsers = function (season) {
             }
         }
     }]).sort({ 'seasonScores.score': -1 });
-}
+};
 
-userSchema.statics.increaseScore = function (authorId, season) {
+userSchema.statics.increaseScore = function (authorId: string, season: number) {
     return this.findOneAndUpdate({ discordId: authorId, 'seasonScores.season': season }, { $inc: { score: 1, 'seasonScores.$.score': 1 } }, { returnDocument: 'after' });
-}
+};
 
-userSchema.statics.decreaseScore = function (authorId, season) {
+userSchema.statics.decreaseScore = function (authorId: string, season: number) {
     return this.updateOne({ discordId: authorId, 'seasonScores.season': season }, { $inc: { score: -1, 'seasonScores.$.score': -1 } }, { returnDocument: 'after' });
-}
+};
 
-userSchema.statics.timeOutUser = function (replierId) {
+userSchema.statics.timeOutUser = function (replierId: string) {
     return this.updateOne({ discordId: replierId }, { isUserTimedOut: true });
-}
+};
 
-userSchema.statics.unTimeOutUser = function (replierId) {
+userSchema.statics.unTimeOutUser = function (replierId: string) {
     return this.updateOne({ discordId: replierId }, { isUserTimedOut: false });
-}
+};
 
-userSchema.statics.checkUsersTimeoutStatus = function (replierId) {
+userSchema.statics.checkUsersTimeoutStatus = function (replierId: string) {
     return this.findOne({ discordId: replierId });
-}
+};
 
-userSchema.statics.addSeason = function(season) {
+userSchema.statics.addSeason = function (season: number) {
     return this.updateMany({ $push: { seasonScores: { season: season++, score: 0 } } });
-}
+};
 
-module.exports = model('users', userSchema);
+export default model<UserDocument, UserModel>('users', userSchema);

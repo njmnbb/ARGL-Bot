@@ -1,12 +1,13 @@
-const Anthropic = require('@anthropic-ai/sdk');
+import Anthropic from '@anthropic-ai/sdk';
+import type { TextBasedChannelFields } from 'discord.js';
 
 if (typeof fetch === 'undefined') {
     const nodeFetch = require('node-fetch');
-    globalThis.fetch = nodeFetch;
-    globalThis.Headers = nodeFetch.Headers;
-    globalThis.Request = nodeFetch.Request;
-    globalThis.Response = nodeFetch.Response;
-    globalThis.FormData = require('formdata-node').FormData;
+    (globalThis as any).fetch = nodeFetch;
+    (globalThis as any).Headers = nodeFetch.Headers;
+    (globalThis as any).Request = nodeFetch.Request;
+    (globalThis as any).Response = nodeFetch.Response;
+    (globalThis as any).FormData = require('formdata-node').FormData;
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -14,7 +15,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const HISTORY_LIMIT = 100;
 const DISCORD_MESSAGE_LIMIT = 2000;
 
-async function fetchChannelTranscript(channel) {
+async function fetchChannelTranscript(channel: TextBasedChannelFields): Promise<string> {
     const messages = await channel.messages.fetch({ limit: HISTORY_LIMIT });
 
     return [...messages.values()]
@@ -24,8 +25,7 @@ async function fetchChannelTranscript(channel) {
         .join('\n');
 }
 
-async function answerQuestion(channel, question) {
-    console.log(process.env.ANTHROPIC_API_KEY)
+export async function answerQuestion(channel: TextBasedChannelFields, question: string): Promise<string> {
     const transcript = await fetchChannelTranscript(channel);
 
     const response = await anthropic.messages.create({
@@ -46,12 +46,10 @@ async function answerQuestion(channel, question) {
         .join('\n');
 }
 
-function splitForDiscord(text) {
-    const chunks = [];
+export function splitForDiscord(text: string): string[] {
+    const chunks: string[] = [];
     for (let i = 0; i < text.length; i += DISCORD_MESSAGE_LIMIT) {
         chunks.push(text.slice(i, i + DISCORD_MESSAGE_LIMIT));
     }
     return chunks;
 }
-
-module.exports = { answerQuestion, splitForDiscord };
